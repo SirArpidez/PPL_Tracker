@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broken Piston - Telemetría de Entrenamiento</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.41.1/html2canvas.min.js"></script>
+    <style>
+        /* Optimización para inputs numéricos en móviles */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 antialiased">
+
+    <div class="max-w-md mx-auto space-y-6 pb-12">
+        
+        <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-black tracking-wider text-orange-500">BROKEN PISTON</h1>
+                <p class="text-xs text-slate-400">Bio-Mechanical System v1.0</p>
+            </div>
+            <div class="text-right">
+                <span id="current-date" class="text-sm font-mono text-slate-300"></span>
+            </div>
+        </header>
+
+        <section class="grid grid-cols-3 gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+            <button onclick="switchDay('push')" id="btn-push" class="py-2.5 text-sm font-bold rounded-lg transition-all cursor-pointer bg-orange-600 text-white">PUSH</button>
+            <button onclick="switchDay('pull')" id="btn-pull" class="py-2.5 text-sm font-bold rounded-lg transition-all cursor-pointer text-slate-400 hover:text-white">PULL</button>
+            <button onclick="switchDay('leg')" id="btn-leg" class="py-2.5 text-sm font-bold rounded-lg transition-all cursor-pointer text-slate-400 hover:text-white">LEG</button>
+        </section>
+
+        <section class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pre-Workout Stack</label>
+                <input type="text" id="pre-workout" value="3 Rice Cakes + Café + Sal" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 text-slate-200">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Hora de Cierre</label>
+                <input type="time" id="end-time" value="06:15" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 text-slate-200 font-mono">
+            </div>
+        </section>
+
+        <div id="capture-zone" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 shadow-2xl space-y-6">
+            
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h2 id="routine-title" class="text-lg font-extrabold tracking-wide text-white uppercase">PUSH DAY</h2>
+                <div class="text-[10px] font-mono bg-orange-950/50 text-orange-400 border border-orange-900/50 px-2 py-0.5 rounded">MIOFIBRILAR OPTIMIZATION</div>
+            </div>
+
+            <div id="exercises-container" class="space-y-6">
+                </div>
+        </div>
+
+        <section class="pt-2">
+            <button onclick="exportToJPG()" class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-orange-900/20 transition-all transform active:scale-[0.98] flex justify-center items-center gap-2 cursor-pointer text-sm tracking-wide">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                DESCARGAR REPORTE DIAGRAMADO (.JPG)
+            </button>
+        </section>
+
+    </div>
+
+    <script>
+        // 1. Base de Datos del Sistema (Estructura PPL Optimizada)
+        const routines = {
+            push: [
+                { name: "1. Press Inclinado (Barra)", placeholder: "Meta anterior: 3x8" },
+                { name: "2. Press Plano (Máquina Hammer)", placeholder: "Meta anterior: 3x10" },
+                { name: "3. Pec Fly (Polea / Contractor)", placeholder: "Meta anterior: 3x12" },
+                { name: "4. Press de Hombro (Mancuerna)", placeholder: "Meta anterior: 3x10" },
+                { name: "5. Elevaciones Laterales (Polea)", placeholder: "Meta anterior: 3x15" },
+                { name: "6. Extensión Tríceps (Polea Alta)", placeholder: "Meta anterior: 3x12" },
+                { name: "7. Tríceps sobre la Cabeza (Polea)", placeholder: "Meta anterior: 3x12" }
+            ],
+            pull: [
+                { name: "1. Jalón al Pecho (Polea Alta)", placeholder: "Meta anterior: 3x10" },
+                { name: "2. Remo con Barra / Soporte", placeholder: "Meta anterior: 3x8" },
+                { name: "3. Remo Unilateral (Mancuerna)", placeholder: "Meta anterior: 3x10" },
+                { name: "4. Face Pulls (Deltoides Posterior)", placeholder: "Meta anterior: 3x15" },
+                { name: "5. Curl de Bíceps Inclinado (Manc)", placeholder: "Meta anterior: 3x10" },
+                { name: "6. Curl de Bíceps Predicador", placeholder: "Meta anterior: 3x12" }
+            ],
+            leg: [
+                { name: "1. Sentadilla Hatfield o Prensa Pesada", placeholder: "Meta anterior: 3x8" },
+                { name: "2. Peso Muerto Rumano (Manc/Barra)", placeholder: "Meta anterior: 3x10" },
+                { name: "3. Extensión de Cuádriceps (Máquina)", placeholder: "Meta anterior: 3x12" },
+                { name: "4. Curl Femoral Tumbado/Sentado", placeholder: "Meta anterior: 3x12" },
+                { name: "5. Elevación de Pantorrilla de Pie", placeholder: "Meta anterior: 3x15" }
+            ]
+        };
+
+        let currentDay = 'push';
+
+        // Setear fecha actual de forma automática
+        const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('es-MX', dateOptions).toUpperCase();
+
+        // 2. Renderizador Dinámico de Ejercicios
+        function renderExercises(day) {
+            const container = document.getElementById('exercises-container');
+            container.innerHTML = ''; // Limpiar el DOM
+
+            routines[day].forEach((ex, exIdx) => {
+                const exBlock = document.createElement('div');
+                exBlock.className = 'bg-slate-900/40 border border-slate-900 rounded-xl p-3 space-y-2.5';
+                
+                exBlock.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-black tracking-wide text-slate-200 uppercase">${ex.name}</h3>
+                        <span class="text-[9px] font-mono text-slate-500">${ex.placeholder}</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        ${[1, 2, 3].map(set => `
+                            <div class="grid grid-cols-12 gap-2 items-center text-xs">
+                                <span class="col-span-2 text-[10px] font-mono text-slate-400 font-bold">SERIE ${set}</span>
+                                <div class="col-span-4 relative">
+                                    <input type="number" placeholder="000" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center font-mono focus:outline-none focus:border-orange-500 text-white">
+                                    <span class="absolute right-2 top-1 text-[9px] text-slate-600 font-bold">KG</span>
+                                </div>
+                                <div class="col-span-3 relative">
+                                    <input type="number" placeholder="00" class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center font-mono focus:outline-none focus:border-orange-500 text-white">
+                                    <span class="absolute right-2 top-1 text-[9px] text-slate-600 font-bold">REPS</span>
+                                </div>
+                                <div class="col-span-3 relative">
+                                    <select class="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 text-center font-mono focus:outline-none focus:border-orange-500 text-orange-400 appearance-none cursor-pointer">
+                                        <option value="RIR 2">RIR 2</option>
+                                        <option value="RIR 1">RIR 1</option>
+                                        <option value="RIR 0">RIR 0</option>
+                                        <option value="RIR 3">RIR 3</option>
+                                    </select>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(exBlock);
+            });
+        }
+
+        // 3. Controlador de Switch de Pestañas
+        function switchDay(day) {
+            currentDay = day;
+            const tabs = ['push', 'pull', 'leg'];
+            
+            tabs.forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (t === day) {
+                    btn.className = "py-2.5 text-sm font-bold rounded-lg transition-all cursor-pointer bg-orange-600 text-white";
+                } else {
+                    btn.className = "py-2.5 text-sm font-bold rounded-lg transition-all cursor-pointer text-slate-400 hover:text-white";
+                }
+            });
+
+            document.getElementById('routine-title').innerText = `${day} day`;
+            renderExercises(day);
+        }
+
+        // 4. Motor de Exportación a Imagen (html2canvas con clonación limpia)
+        function exportToJPG() {
+            const target = document.getElementById('capture-zone');
+            
+            // Reemplazar temporalmente los inputs por divs de texto estáticos para asegurar render idéntico en el JPG
+            const clone = target.cloneNode(true);
+            const originalInputs = target.querySelectorAll('input, select');
+            const clonedInputs = clone.querySelectorAll('input, select');
+            
+            originalInputs.forEach((input, index) => {
+                const val = input.value || '--';
+                const replacement = document.createElement('span');
+                replacement.className = "text-xs font-mono font-bold text-white text-center block w-full";
+                replacement.innerText = val;
+                clonedInputs[index].parentNode.replaceChild(replacement, clonedInputs[index]);
+            });
+
+            // Agregar metadatos de telemetría adicionales al clon que va al JPG
+            const metaBlock = document.createElement('div');
+            metaBlock.className = "border-t border-slate-800 pt-3 flex justify-between text-[10px] font-mono text-slate-500 px-1";
+            metaBlock.innerHTML = `
+                <div>PRE: ${document.getElementById('pre-workout').value}</div>
+                <div>CIERRE: ${document.getElementById('end-time').value} AM</div>
+                <div>DATE: ${document.getElementById('current-date').innerText}</div>
+            `;
+            clone.appendChild(metaBlock);
+
+            // Ajustes estéticos específicos para la imagen final
+            clone.style.width = "400px";
+            clone.style.background = "#020617"; // slate-950 estricto
+            document.body.appendChild(clone);
+
+            html2canvas(clone, {
+                backgroundColor: '#020617',
+                scale: 2, // Duplicar densidad de píxeles para máxima nitidez en pantalla móvil
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const link = document.createElement('a');
+                const fileDate = new Date().toISOString().slice(0,10);
+                
+                link.download = `BP_Telemetry_${currentDay.toUpperCase()}_${fileDate}.jpg`;
+                link.href = imgData;
+                link.click();
+                
+                document.body.removeChild(clone); // Limpiar el clon del DOM oculto
+            });
+        }
+
+        // Inicialización al arrancar el sistema
+        renderExercises('push');
+    </script>
+</body>
+</html>
